@@ -1,0 +1,11 @@
+.deps/
+Makefile
+*.o
+config.h
+config.log
+config.status
+dumpnet
+learner
+network/Makefile
+rftg
+stamp-h1
