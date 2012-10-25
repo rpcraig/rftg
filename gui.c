@@ -1958,14 +1958,15 @@ void redraw_goal(void)
 {
 	GtkWidget *image;
 	GdkPixbuf *buf;
-	int i, n;
+	int i;
+	//int n;
 	int width, height, goal_h, y = 0;
 
 	/* First destroy all pre-existing goal widgets */
 	gtk_container_foreach(GTK_CONTAINER(goal_area), destroy_widget, NULL);
 
 	/* Assume six goals */
-	n = 6;
+	//n = 6;
 
 	/* Get goal area width and height */
 	width = goal_area->allocation.width;
@@ -2345,7 +2346,7 @@ static GtkWidget *action_icon(int act, int size)
 static void redraw_status_area(int who, GtkWidget *box)
 {
 	status_display *s_ptr;
-	GtkWidget *image, *label;
+	GtkWidget *image = NULL, *label;
 	GdkPixbuf *buf;
 	int width, height;
 	int act0, act1;
@@ -7636,7 +7637,7 @@ static void where_edit(GtkCellRendererCombo *cell, char *path_str, char *text,
 	GtkTreePath *path;
 	GtkTreeIter iter;
 	card *c_ptr;
-	int c, old_where, new_where;
+	int c, old_where, new_where = -1;
 
 	/* Create path from path string */
 	path = gtk_tree_path_new_from_string(path_str);

@@ -1072,7 +1072,8 @@ static void handle_prepare(char *ptr)
 static gboolean message_read(gpointer data)
 {
 	char *ptr = data;
-	int type, size;
+	int type;
+	//int size;
 	char text[1024], username[1024];
 	GtkTreeIter list_iter;
 	GtkTextIter end_iter;
@@ -1083,7 +1084,7 @@ static gboolean message_read(gpointer data)
 
 	/* Read message type and size */
 	type = get_integer(&ptr);
-	size = get_integer(&ptr);
+	//size = get_integer(&ptr);
 
 	/* Check message type */
 	switch (type)
@@ -2168,7 +2169,7 @@ void create_dialog(GtkButton *button, gpointer data)
 	GtkWidget *table, *label;
 	GtkWidget *exp_box, *exp_frame;
 	GtkWidget *desc, *pass;
-	int i, exp;
+	int i, exp = 0;
 
 	/* Create dialog box */
 	dialog = gtk_dialog_new_with_buttons("Create Game", NULL,

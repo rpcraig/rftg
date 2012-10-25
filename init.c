@@ -306,10 +306,10 @@ void read_cards(void)
 	while (1)
 	{
 		/* Read a line */
-		fgets(buf, 1024, fff);
-
 		/* Check for end of file */
-		if (feof(fff)) break;
+		if (fgets(buf, 1024, fff) == NULL) {
+			break;
+		}
 
 		/* Strip newline */
 		buf[strlen(buf) - 1] = '\0';

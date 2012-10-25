@@ -1021,11 +1021,11 @@ static int get_goods(game *g, int who, int goods[MAX_DECK], int type)
  */
 void discard_callback(game *g, int who, int list[], int num)
 {
-	player *p_ptr;
+	//player *p_ptr;
 	int i;
 
 	/* Get player pointer */
-	p_ptr = &g->p[who];
+	//p_ptr = &g->p[who];
 
 	/* Loop over choices */
 	for (i = 0; i < num; i++)
@@ -4845,10 +4845,10 @@ static int resolve_takeover(game *g, int who, int world, int special,
 	player *p_ptr;
 	card *c_ptr;
 	power *o_ptr = NULL;
-	int defense;
+	int defense = 0;
 	int prestige = 0;
 	char msg[1024];
-	int bonus = 0, attack;
+	int bonus = 0, attack = 0;
 	int i;
 
 	/* Get player pointer */
@@ -5342,11 +5342,11 @@ void phase_settle(game *g)
 int payment_callback(game *g, int who, int which, int list[], int num,
                      int special[], int num_special, int mil_only)
 {
-	player *p_ptr;
+	//player *p_ptr;
 	card *c_ptr;
 
 	/* Get player pointer */
-	p_ptr = &g->p[who];
+	//p_ptr = &g->p[who];
 
 	/* Get pointer of card being played */
 	c_ptr = &g->deck[which];
@@ -6130,11 +6130,11 @@ int consume_hand_chosen(game *g, int who, int c_idx, int o_idx,
  */
 static void consume_discard(game *g, int who, int c_idx, int o_idx)
 {
-	player *p_ptr;
+	//player *p_ptr;
 	int list[MAX_DECK], n = 0;
 
 	/* Get player pointer */
-	p_ptr = &g->p[who];
+	//p_ptr = &g->p[who];
 
 	/* Get cards in hand */
 	n = get_player_area(g, who, list, WHERE_HAND);
@@ -6958,14 +6958,14 @@ void discard_produce_chosen(game *g, int who, int world, int discard,
                             int c_idx, int o_idx)
 {
 	player *p_ptr;
-	card *c_ptr;
+	//card *c_ptr;
 	char msg[1024];
 
 	/* Get player pointer */
 	p_ptr = &g->p[who];
 
 	/* Get card to discard */
-	c_ptr = &g->deck[discard];
+	//c_ptr = &g->deck[discard];
 
 	/* Move card to discard */
 	move_card(g, discard, -1, WHERE_DISCARD);
@@ -6989,12 +6989,12 @@ void discard_produce_chosen(game *g, int who, int world, int discard,
  */
 static void discard_produce(game *g, int who, int world, int c_idx, int o_idx)
 {
-	player *p_ptr;
+	//player *p_ptr;
 	int list[MAX_DECK], n = 0;
 	int special[MAX_DECK], num_special = 0;
 
 	/* Get player pointer */
-	p_ptr = &g->p[who];
+	//p_ptr = &g->p[who];
 
 	/* Get cards in hand */
 	n = get_player_area(g, who, list, WHERE_HAND);
@@ -9002,7 +9002,7 @@ static void rotate_players(game *g)
 int start_callback(game *g, int who, int list[], int n, int special[], int ns)
 {
 	player *p_ptr = &g->p[who];
-	card *c_ptr;
+	//card *c_ptr;
 
 	/* Ensure exactly one start world chosen */
 	if (ns != 1) return 0;
@@ -9011,7 +9011,7 @@ int start_callback(game *g, int who, int list[], int n, int special[], int ns)
 	p_ptr->start = special[0];
 
 	/* Get card pointer of start world */
-	c_ptr = &g->deck[special[0]];
+	//c_ptr = &g->deck[special[0]];
 
 	/* Check for 2 cards discarded */
 	if (n != 2) return 0;

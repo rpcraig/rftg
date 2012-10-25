@@ -19,6 +19,7 @@
  */
 
 #include "net.h"
+#include <errno.h>
 
 /*
  * Maximum number of previous input sets.
@@ -573,13 +574,26 @@ int load_net(net *learn, char *fname)
 	    output != learn->num_output) return -1;
 
 	/* Read number of training iterations */
-	fscanf(fff, "%d\n", &learn->num_training);
+	if (fscanf(fff, "%d\n", &learn->num_training) != 1) {
+		printf("Error reading number of training iteration in %s.\n",
+		       __FUNCTION__);
+		return -1;
+	}
 
 	/* Loop over input names */
 	for (i = 0; i < learn->num_inputs; i++)
 	{
 		/* Read an input name */
-		fgets(name, 80, fff);
+		if (fgets(name, 80, fff) == NULL) {
+			if (feof(fff)) {
+				printf("EOF found when reading input name in %s.\n",
+				       __FUNCTION__);
+			} else {
+				printf("Error reading input name in %s (%s).\n",
+				       __FUNCTION__, strerror(errno));
+			}
+			return -1;
+		}
 
 		/* Strip newline */
 		name[strlen(name) - 1] = '\0';

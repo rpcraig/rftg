@@ -31,7 +31,14 @@ int main(int argc, char *argv[])
 
 	fff = fopen(argv[1], "r");
 
-	fgets(buf, 1024, fff);
+	if (fgets(buf, 1024, fff) == NULL) {
+		if (feof(fff)) {
+			printf("End of file encountered in %s.\n", __FILE__);
+		} else {
+			printf("Read error in %s.\n", __FILE__);
+		}
+		return -1;
+	}
 
 	fclose(fff);
 

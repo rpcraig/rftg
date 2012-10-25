@@ -19,6 +19,7 @@
  */
 
 #include "rftg.h"
+#include <errno.h>
 
 /*
  * Load a game from the given filename.
@@ -38,13 +39,31 @@ int load_game(game *g, char *filename)
 	if (!fff) return -1;
 
 	/* Read header */
-	fgets(buf, 1024, fff);
+	if (fgets(buf, 1024, fff) == NULL) {
+		if (ferror(fff)) {
+			printf("Reached end of file unexpectedly with %s reading header line\n",
+			       __FUNCTION__);
+		} else {
+			printf("Error while parsing header line of saved game (%s) \n",
+			       strerror(errno));
+		}
+		return -1;
+	}
 
 	/* Check for correct header */
 	if (strcmp(buf, "RFTG Save\n")) return -1;
 
 	/* Read version line */
-	fgets(version, 1024, fff);
+	if (fgets(version, 1024, fff) == NULL) {
+		if (ferror(fff)) {
+			printf("Reached end of file unexpectedly with %s reading version line\n",
+			       __FUNCTION__);
+		} else {
+			printf("Error while parsing version line of saved game (%s)\n",
+			       strerror(errno));
+		}
+		return -1;
+	}
 
 	/* Strip newline from version */
 	version[strlen(version) - 1] = '\0';
@@ -56,12 +75,21 @@ int load_game(game *g, char *filename)
 	if (strcmp(version, "0.7.2") < 0) return -1;
 
 	/* Read random seed information */
-	fscanf(fff, "%u\n", &g->start_seed);
+	if (fscanf(fff, "%u\n", &g->start_seed) != 1) {
+		printf("Error reading seeding information for saved game.\n");
+		return -1;
+	}
 
 	/* Read game setup information */
-	fscanf(fff, "%d %d\n", &g->num_players, &g->expanded);
-	fscanf(fff, "%d %d %d\n", &g->advanced, &g->goal_disabled,
-	                          &g->takeover_disabled);
+	if (fscanf(fff, "%d %d\n", &g->num_players, &g->expanded) != 2) {
+		printf("Error reading game setup info with number of players.\n");
+		return -1;
+	}
+	if (fscanf(fff, "%d %d %d\n", &g->advanced, &g->goal_disabled,
+		   &g->takeover_disabled) != 3) {
+		printf("Error reading game setup info with number of players.\n");
+		return -1;
+	}
 
 	/* Clear simulation flag */
 	g->simulation = 0;
@@ -73,13 +101,19 @@ int load_game(game *g, char *filename)
 		p_ptr = &g->p[i];
 
 		/* Read choice log size */
-		fscanf(fff, "%d", &p_ptr->choice_size);
+		if (fscanf(fff, "%d", &p_ptr->choice_size) != 1) {
+			printf("Error reading choice log size for saved game.\n");
+			return -1;
+		}
 
 		/* Loop over choice log entries */
 		for (j = 0; j < p_ptr->choice_size; j++)
 		{
 			/* Read choice log entry */
-			fscanf(fff, "%d", &p_ptr->choice_log[j]);
+			if (fscanf(fff, "%d", &p_ptr->choice_log[j]) != 1) {
+				printf("Error reading choice log entry for saved game.\n");
+				return -1;
+			}
 		}
 
 		/* Reset choice log position */
