@@ -18,7 +18,7 @@ dist_pkgdata_DATA = cards.txt images.data
 
 AM_CFLAGS = -Wall
 
-rftg_CFLAGS = -Wall @GTK_CFLAGS@ -DRFTGDIR=\"$(pkgdatadir)\"
+rftg_CFLAGS = -Wall -Werror @GTK_CFLAGS@ -DRFTGDIR=\"$(pkgdatadir)\"
 rftg_LDADD = @GTK_LIBS@
 
 server_LDADD = -lmysqlclient -lpthread
