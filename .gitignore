@@ -9,3 +9,4 @@ learner
 network/Makefile
 rftg
 stamp-h1
+autom4te.cache/
