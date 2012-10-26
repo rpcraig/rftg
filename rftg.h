@@ -29,6 +29,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <time.h>
+#include <stdbool.h>
 
 /*
  * Default data directory if not otherwise specified.
@@ -1027,7 +1028,6 @@ typedef struct options
 
 } options;
 
-
 /*
  * Special icon numbers.
  */
@@ -1047,6 +1047,35 @@ typedef struct options
 #define MAX_ACT_CARD   11
 
 /*
+ * Colors to highlight with.
+ */
+#define HIGH_NONE   0
+#define HIGH_YELLOW 1
+#define HIGH_RED    2
+
+/*
+ * Restriction types on action button sensitivity.
+ */
+#define RESTRICT_NUM      1
+#define RESTRICT_BOTH     2
+#define RESTRICT_PAY      3
+#define RESTRICT_GOOD     4
+#define RESTRICT_TAKEOVER 5
+#define RESTRICT_DEFEND   6
+#define RESTRICT_UPGRADE  7
+#define RESTRICT_CONSUME  8
+#define RESTRICT_START    9
+
+/*
+ * Reasons to restart main loop.   
+ */
+#define RESTART_NEW  1
+#define RESTART_LOAD 2
+#define RESTART_UNDO 3
+#define RESTART_NONE 4
+
+
+/*
  * External variables.
  */
 extern design library[MAX_DESIGN];
@@ -1060,6 +1089,17 @@ extern int player_us;
 extern displayed hand[MAX_DECK];
 extern int num_undo;
 extern options opt;
+extern int action_min;
+extern int action_max;
+extern int action_payment_which;
+extern int action_payment_mil;
+extern int action_cidx;
+extern int action_oidx;
+extern int action_restrict;
+extern int restart_loop;
+extern int *orig_log[MAX_PLAYER];
+extern int *orig_history[MAX_PLAYER];
+
 
 /*
  * External functions.
@@ -1190,3 +1230,21 @@ extern int gui_choose_search_type(game *g, int who);
 extern int gui_choose_search_keep(game *g, int who, int arg1, int arg2);
 extern int gui_choose_oort_kind(game *g, int who);
 
+extern bool action_check_number(void);
+extern bool action_check_takeover(void);
+extern bool action_check_both(void);
+extern bool action_check_payment(void);
+extern bool action_check_goods(void);
+extern bool action_check_defend(void);
+extern bool action_check_upgrade(void);
+extern bool action_check_consume(void);
+
+extern void label_set_text(char *buf);
+extern void process_events();
+extern void widget_set_sensitive(bool activate);
+extern void run_game(void);
+extern void reset_gui(void);
+extern void modify_gui(void);
+extern void restore_table_area(int i);
+extern void restore_status_area(int i);
+extern void clear_log(void);

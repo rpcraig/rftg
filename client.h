@@ -1,11 +1,3 @@
-/*
- * Reasons to restart main loop.
- */
-#define RESTART_NEW  1
-#define RESTART_LOAD 2
-#define RESTART_UNDO 3
-#define RESTART_NONE 4
-
 extern options opt;
 extern GtkListStore *user_list;
 extern GtkTreeStore *game_list;

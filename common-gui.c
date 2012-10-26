@@ -1081,4 +1081,2180 @@ void debug_card_moved(int c, int old_owner, int old_where)
 	redraw_everything();
 }
 
+/*
+ * Function to determine whether enough cards are selected.
+ */
+bool action_check_number(void)
+{
+	displayed *i_ptr;
+	int i, n = 0;
+
+	/* Loop over cards in hand */
+	for (i = 0; i < hand_size; i++)
+	{
+		/* Get displayed card pointer */
+		i_ptr = &hand[i];
+
+		/* Skip unselected */
+		if (!i_ptr->selected) continue;
+
+		/* Count selected cards */
+		n++;
+	}
+
+	/* Loop over cards on table */
+	for (i = 0; i < table_size[player_us]; i++)
+	{
+		/* Get displayed card pointer */
+		i_ptr = &table[player_us][i];
+
+		/* Skip unselected */
+		if (!i_ptr->selected) continue;
+
+		/* Count selected cards */
+		n++;
+	}
+
+	/* Check for not enough */
+	if (n < action_min) return false;
+
+	/* Check for too many */
+	if (n > action_max) return false;
+
+	/* Just right */
+	return true;
+}
+
+/*
+ * Function to determine whether selected cards are a legal world upgrade.
+ */
+bool action_check_upgrade(void)
+{
+	game sim;
+	displayed *i_ptr;
+	int i, n = 0, ns = 0;
+	int list[MAX_DECK], special[MAX_DECK];
+
+	/* Loop over cards in hand */
+	for (i = 0; i < hand_size; i++)
+	{
+		/* Get hand pointer */
+		i_ptr = &hand[i];
+
+		/* Skip unselected */
+		if (!i_ptr->selected) continue;
+
+		/* Add to regular list */
+		list[n++] = i_ptr->index;
+	}
+
+	/* Loop over cards on table */
+	for (i = 0; i < table_size[player_us]; i++)
+	{
+		/* Get table card pointer */
+		i_ptr = &table[player_us][i];
+
+		/* Skip unselected */
+		if (!i_ptr->selected) continue;
+
+		/* Add to special list */
+		special[ns++] = i_ptr->index;
+	}
+
+	/* Check for no cards selected */
+	if (!n && !ns) return true;
+
+	/* Check for more than one world or replacement selected */
+	if (n > 1 || ns > 1) return false;
+
+	/* Check for only one of world or replacement selected */
+	if (!n || !ns) return false;
+
+	/* Copy game */
+	sim = real_game;
+
+	/* Set simulation flag */
+	sim.simulation = 1;
+
+	/* Try to upgrade */
+	return upgrade_chosen(&sim, player_us, list[0], special[0]);
+}
+
+/*
+ * Function to determine whether selected cards are a legal defense.
+ */
+bool action_check_defend(void)
+{
+	game sim;
+	displayed *i_ptr;
+	int i, n = 0, ns = 0;
+	int list[MAX_DECK], special[MAX_DECK];
+
+	/* Loop over cards in hand */
+	for (i = 0; i < hand_size; i++)
+	{
+		/* Get hand pointer */
+		i_ptr = &hand[i];
+
+		/* Skip unselected */
+		if (!i_ptr->selected) continue;
+
+		/* Add to regular list */
+		list[n++] = i_ptr->index;
+	}
+
+	/* Loop over cards on table */
+	for (i = 0; i < table_size[player_us]; i++)
+	{
+		/* Get table card pointer */
+		i_ptr = &table[player_us][i];
+
+		/* Skip unselected */
+		if (!i_ptr->selected) continue;
+
+		/* Add to special list */
+		special[ns++] = i_ptr->index;
+	}
+
+	/* Copy game */
+	sim = real_game;
+
+	/* Set simulation flag */
+	sim.simulation = 1;
+
+	/* Try to defend (we don't care about win/lose, just legality */
+	return defend_callback(&sim, player_us, 0, list, n, special, ns);
+}
+
+/*
+ * Function to determine whether enough cards in hand and on table
+ * are selected.
+ */
+bool action_check_both(void)
+{
+	displayed *i_ptr;
+	int i, n = 0, ns = 0;
+
+	/* Loop over cards in hand */
+	for (i = 0; i < hand_size; i++)
+	{
+		/* Get displayed card pointer */
+		i_ptr = &hand[i];
+
+		/* Skip unselected */
+		if (!i_ptr->selected) continue;
+
+		/* Count selected cards */
+		n++;
+	}
+
+	/* Loop over cards on table */
+	for (i = 0; i < table_size[player_us]; i++)
+	{
+		/* Get displayed card pointer */
+		i_ptr = &table[player_us][i];
+
+		/* Skip unselected */
+		if (!i_ptr->selected) continue;
+
+		/* Count selected cards */
+		ns++;
+	}
+
+	/* Check for not enough */
+	if (n < action_min) return false;
+	if (ns < action_min) return false;
+
+	/* Check for too many */
+	if (n > action_max) return false;
+	if (ns > action_max) return false;
+
+	/* Check for hand selected but not table */
+	if (n && !ns) return false;
+
+	/* Just right */
+	return true;
+}
+
+/*
+ * Function to determine whether selected cards meet payment.
+ */
+bool action_check_payment(void)
+{
+	game sim;
+	displayed *i_ptr;
+	int i, n = 0, ns = 0;
+	int list[MAX_DECK], special[MAX_DECK];
+
+	/* Loop over cards in hand */
+	for (i = 0; i < hand_size; i++)
+	{
+		/* Get hand pointer */
+		i_ptr = &hand[i];
+
+		/* Skip unselected */
+		if (!i_ptr->selected) continue;
+
+		/* Add to regular list */
+		list[n++] = i_ptr->index;
+	}
+
+	/* Loop over cards on table */
+	for (i = 0; i < table_size[player_us]; i++)
+	{
+		/* Get table card pointer */
+		i_ptr = &table[player_us][i];
+
+		/* Skip unselected */
+		if (!i_ptr->selected) continue;
+
+		/* Add to special list */
+		special[ns++] = i_ptr->index;
+	}
+
+	/* Copy game */
+	sim = real_game;
+
+	/* Set simulation flag */
+	sim.simulation = 1;
+
+	/* Loop over players */
+	for (i = 0; i < sim.num_players; i++)
+	{
+		/* Have AI make any pending decisions for this player */
+		sim.p[i].control = &ai_func;
+	}
+
+	/* Try to make payment */
+	return payment_callback(&sim, player_us, action_payment_which,
+	                        list, n, special, ns, action_payment_mil);
+}
+
+/*
+ * Function to determine whether selected goods can be consumed.
+ */
+bool action_check_goods(void)
+{
+	game sim;
+	displayed *i_ptr;
+	int i, n = 0;
+	int list[MAX_DECK];
+
+	/* Loop over cards on table */
+	for (i = 0; i < table_size[player_us]; i++)
+	{
+		/* Get displayed card pointer */
+		i_ptr = &table[player_us][i];
+
+		/* Skip unselected */
+		if (!i_ptr->selected) continue;
+
+		/* Add to regular list */
+		list[n++] = i_ptr->index;
+	}
+
+	/* Check for too few */
+	if (n < action_min) return false;
+
+	/* Copy game */
+	sim = real_game;
+
+	/* Set simulation flag */
+	sim.simulation = 1;
+
+	/* Try to make payment */
+	return good_chosen(&sim, player_us, action_cidx, action_oidx, list, n);
+}
+
+/*
+ * Function to determine whether selected card can be taken over.
+ */
+bool action_check_takeover(void)
+{
+	game sim;
+	displayed *i_ptr;
+	int i, j;
+	int target = -1, special = -1;
+
+	/* Loop over opponents */
+	for (i = 0; i < real_game.num_players; i++)
+	{
+		/* Skip ourself */
+		if (i == player_us) continue;
+
+		/* Loop over player's table area */
+		for (j = 0; j < table_size[i]; j++)
+		{
+			/* Get displayed card pointer */
+			i_ptr = &table[i][j];
+
+			/* Skip unselected */
+			if (!i_ptr->selected) continue;
+
+			/* Check for too many targets */
+			if (target != -1) return false;
+			
+			/* Remember target world */
+			target = i_ptr->index;
+		}
+	}
+
+	/* Loop over cards on table */
+	for (i = 0; i < table_size[player_us]; i++)
+	{
+		/* Get table card pointer */
+		i_ptr = &table[player_us][i];
+
+		/* Skip unselected */
+		if (!i_ptr->selected) continue;
+
+		/* Check for too many special cards */
+		if (special != -1) return false;
+
+		/* Remember special card used */
+		special = i_ptr->index;
+	}
+
+	/* Check for no target or special card */
+	if (target == -1 && special == -1) return true;
+
+	/* Check for only no target */
+	if (target == -1) return false;
+
+	/* Check for only no special card */
+	if (special == -1) return false;
+
+	/* Copy game */
+	sim = real_game;
+
+	/* Set simulation flag */
+	sim.simulation = 1;
+
+	/* Check takeover legality */
+	return takeover_callback(&sim, special, target);
+}
+
+/*
+ * Function to determine whether selected cards are legal to consume.
+ */
+bool action_check_consume(void)
+{
+	game sim;
+	displayed *i_ptr;
+	int i, n = 0;
+	int list[MAX_DECK];
+
+	/* Loop over cards in hand */
+	for (i = 0; i < hand_size; i++)
+	{
+		/* Get hand pointer */
+		i_ptr = &hand[i];
+
+		/* Skip unselected */
+		if (!i_ptr->selected) continue;
+
+		/* Add to regular list */
+		list[n++] = i_ptr->index;
+	}
+
+	/* Copy game */
+	sim = real_game;
+
+	/* Set simulation flag */
+	sim.simulation = 1;
+
+	/* Try to consume */
+	return consume_hand_chosen(&sim, player_us, action_cidx, action_oidx,
+	                           list, n);
+}
+
+/*
+ * Choose a start world from those given.
+ */
+void gui_choose_start(game *g, int who, int list[], int *num, int special[],
+                      int *num_special)
+{
+	char buf[1024];
+	displayed *i_ptr;
+	card *c_ptr;
+	int i, j, n = 0;
+
+	/* Create prompt */
+	sprintf(buf, "Choose start world and hand discards");
+
+	/* Set prompt */
+	label_set_text(buf);
+
+	/* Set restrictions on action button */
+	action_restrict = RESTRICT_START;
+
+	/* Deactivate action button */
+	//gtk_widget_set_sensitive(action_button, FALSE);
+	widget_set_sensitive(false);
+
+	/* Reset displayed cards */
+	reset_cards(g, true, true);
+
+	/* Add start worlds to table */
+	for (i = 0; i < *num_special; i++)
+	{
+		/* Get card pointer */
+		c_ptr = &real_game.deck[special[i]];
+
+		/* Get next entry in table list */
+		i_ptr = &table[player_us][table_size[player_us]++];
+
+		/* Clear displayed card */
+		reset_display(i_ptr);
+
+		/* Add card information */
+		i_ptr->index = special[i];
+		i_ptr->d_ptr = c_ptr->d_ptr;
+
+		/* Card is eligible */
+		i_ptr->eligible = 1;
+		i_ptr->greedy = 1;
+
+		/* Card should be highlighted when selected */
+		i_ptr->highlight = HIGH_YELLOW;
+		i_ptr->highlight_else = HIGH_RED;
+	}
+
+	/* Loop over cards in list */
+	for (i = 0; i < *num; i++)
+	{
+		/* Loop over cards in hand */
+		for (j = 0; j < hand_size; j++)
+		{
+			/* Get hand pointer */
+			i_ptr = &hand[j];
+
+			/* Check for matching index */
+			if (i_ptr->index == list[i])
+			{
+				/* Card is eligible */
+				i_ptr->eligible = 1;
+
+				/* Card should be red when selected */
+				i_ptr->highlight = HIGH_RED;
+
+				/* Push card when selected */
+				i_ptr->push = 1;
+			}
+		}
+	}
+
+	/* Redraw everything */
+	redraw_everything();
+
+	/* Process events */
+	process_events();
+
+	/* Loop over table cards */
+	for (i = 0; i < table_size[player_us]; i++)
+	{
+		/* Get displayed card pointer */
+		i_ptr = &table[player_us][i];
+
+		/* Check for selected start world */
+		if (i_ptr->selected)
+		{
+			/* Remember start world */
+			special[0] = i_ptr->index;
+			*num_special = 1;
+		}
+	}
+
+	/* Loop over cards in hand */
+	for (i = 0; i < hand_size; i++)
+	{
+		/* Get hand pointer */
+		i_ptr = &hand[i];
+
+		/* Check for selected */
+		if (i_ptr->selected)
+		{
+			/* Add to list */
+			list[n++] = i_ptr->index;
+		}
+	}
+
+	/* Set number of cards selected */
+	*num = n;
+}
+
+/*
+ * Ask the player to discard some number of cards from the set given.
+ */
+void gui_choose_discard(game *g, int who, int list[], int *num, int discard)
+{
+	char buf[1024];
+	displayed *i_ptr;
+	card *c_ptr;
+	int i, j, n = 0;
+
+	/* Create prompt */
+	sprintf(buf, "Choose %d card%s to discard", discard,
+	              discard == 1 ? "" : "s");
+
+	/* Set prompt */
+	label_set_text(buf);
+
+	/* Set restrictions on action button */
+	action_restrict = RESTRICT_NUM;
+	action_min = action_max = discard;
+
+	/* Deactivate action button */
+	//gtk_widget_set_sensitive(action_button, FALSE);
+	widget_set_sensitive(false);
+
+	/* Reset displayed cards */
+	reset_cards(g, false, true);
+
+	/* Loop over cards in list */
+	for (i = 0; i < *num; i++)
+	{
+		/* Get card pointer */
+		c_ptr = &g->deck[list[i]];
+
+		/* Loop over cards in hand */
+		for (j = 0; j < hand_size; j++)
+		{
+			/* Get hand pointer */
+			i_ptr = &hand[j];
+
+			/* Check for matching index */
+			if (i_ptr->index == list[i])
+			{
+				/* Card is eligible */
+				i_ptr->eligible = 1;
+
+				/* Card should be red when selected */
+				i_ptr->highlight = HIGH_RED;
+
+				/* Push card when selected */
+				i_ptr->push = 1;
+
+				/* Check for new card */
+				if (c_ptr->start_where != WHERE_HAND ||
+				    c_ptr->start_owner != who)
+				{
+					/* Put gap before card */
+					i_ptr->gapped = 1;
+				}
+			}
+		}
+	}
+
+	/* Redraw everything */
+	redraw_everything();
+
+	/* Process events */
+	process_events();
+
+	/* Loop over cards in hand */
+	for (i = 0; i < hand_size; i++)
+	{
+		/* Get hand pointer */
+		i_ptr = &hand[i];
+
+		/* Check for selected */
+		if (i_ptr->selected)
+		{
+			/* Add to list */
+			list[n++] = i_ptr->index;
+		}
+	}
+
+	/* Set number of cards selected */
+	*num = n;
+}
+
+/*
+ * Ask the player to save on of the given cards under a world.
+ */
+void gui_choose_save(game *g, int who, int list[], int *num)
+{
+	char buf[1024];
+	displayed *i_ptr;
+	card *c_ptr;
+	int i, j, n = 0;
+
+	/* Create prompt */
+	sprintf(buf, "Choose card to save for later");
+
+	/* Set prompt */
+	label_set_text(buf);
+
+	/* Set restrictions on action button */
+	action_restrict = RESTRICT_NUM;
+	action_min = action_max = 1;
+
+	/* Deactivate action button */
+	widget_set_sensitive(false);
+
+	/* Reset displayed cards */
+	reset_cards(g, false, true);
+
+	/* Loop over choices */
+	for (i = 0; i < *num; i++)
+	{
+		/* Loop over cards in hand already */
+		for (j = 0; j < hand_size; j++)
+		{
+			/* Get displayed card */
+			i_ptr = &hand[j];
+
+			/* Check for match */
+			if (i_ptr->index == list[i])
+			{
+				/* Mark card as eligible */
+				i_ptr->eligible = 1;
+				i_ptr->greedy = 1;
+
+				/* Display card with gap */
+				i_ptr->gapped = 1;
+
+				/* Card should be highlighted when selected */
+				i_ptr->highlight = HIGH_YELLOW;
+				break;
+			}
+		}
+
+		/* Check for card already found */
+		if (j < hand_size) continue;
+
+		/* Get card pointer */
+		c_ptr = &real_game.deck[list[i]];
+
+		/* Get next entry in hand list */
+		i_ptr = &hand[hand_size++];
+
+		/* Reset structure */
+		reset_display(i_ptr);
+
+		/* Add card information */
+		i_ptr->index = list[i];
+		i_ptr->d_ptr = c_ptr->d_ptr;
+
+		/* Card is in hand */
+		i_ptr->hand = 1;
+
+		/* Card is eligible for selection */
+		i_ptr->eligible = 1;
+		i_ptr->greedy = 1;
+
+		/* Display card with gap */
+		i_ptr->gapped = 1;
+
+		/* Card should be highlighted when selected */
+		i_ptr->highlight = HIGH_YELLOW;
+		i_ptr->highlight_else = HIGH_RED;
+	}
+
+	/* Redraw everything */
+	redraw_everything();
+
+	/* Process events */
+	process_events();
+
+	/* Loop over cards in hand */
+	for (i = 0; i < hand_size; i++)
+	{
+		/* Get hand pointer */
+		i_ptr = &hand[i];
+
+		/* Check for selected */
+		if (i_ptr->selected)
+		{
+			/* Add to list */
+			list[n++] = i_ptr->index;
+		}
+	}
+
+	/* Set number of cards selected */
+	*num = n;
+}
+
+/*
+ * Choose whether to discard a card for prestige.
+ */
+void gui_choose_discard_prestige(game *g, int who, int list[], int *num)
+{
+	char buf[1024];
+	displayed *i_ptr;
+	int i, j, n = 0;
+
+	/* Create prompt */
+	sprintf(buf, "Choose card to discard for prestige");
+
+	/* Set prompt */
+	label_set_text(buf);
+
+	/* Set restrictions on action button */
+	action_restrict = RESTRICT_NUM;
+	action_min = 0;
+	action_max = 1;
+
+	/* Activate action button */
+	widget_set_sensitive(true);
+
+	/* Reset displayed cards */
+	reset_cards(g, false, true);
+
+	/* Loop over cards in list */
+	for (i = 0; i < *num; i++)
+	{
+		/* Loop over cards in hand */
+		for (j = 0; j < hand_size; j++)
+		{
+			/* Get hand pointer */
+			i_ptr = &hand[j];
+
+			/* Check for matching index */
+			if (i_ptr->index == list[i])
+			{
+				/* Card is eligible */
+				i_ptr->eligible = 1;
+
+				/* Highlight in red when selected */
+				i_ptr->highlight = HIGH_RED;
+
+				/* Card should be pushed up when selected */
+				i_ptr->push = 1;
+			}
+		}
+	}
+
+	/* Redraw everything */
+	redraw_everything();
+
+	/* Process events */
+	process_events();
+
+	/* Loop over cards in hand */
+	for (i = 0; i < hand_size; i++)
+	{
+		/* Get hand pointer */
+		i_ptr = &hand[i];
+
+		/* Check for selected */
+		if (i_ptr->selected)
+		{
+			/* Add to list */
+			list[n++] = i_ptr->index;
+		}
+	}
+
+	/* Set number of cards selected */
+	*num = n;
+}
+
+/*
+ * Choose a card to place for the Develop or Settle phases.
+ */
+int gui_choose_place(game *g, int who, int list[], int num, int phase,
+                     int special)
+{
+	char buf[1024];
+	displayed *i_ptr;
+	int i, j;
+
+	/* Create prompt */
+	sprintf(buf, "Choose card to %s",
+	        phase == PHASE_DEVELOP ? "develop" : "settle");
+
+	/* Check for special card used to provide power */
+	if (special != -1)
+	{
+		/* Append name to prompt */
+		strcat(buf, " using ");
+		strcat(buf, g->deck[special].d_ptr->name);
+	}
+
+	/* Set prompt */
+	label_set_text(buf);
+
+	/* Set restrictions on action button */
+	action_restrict = RESTRICT_NUM;
+	action_min = 0;
+	action_max = 1;
+
+	/* Activate action button */
+	widget_set_sensitive(true);
+
+	/* Reset displayed cards */
+	reset_cards(g, false, true);
+
+	/* Loop over cards in list */
+	for (i = 0; i < num; i++)
+	{
+		/* Loop over cards in hand */
+		for (j = 0; j < hand_size; j++)
+		{
+			/* Get hand pointer */
+			i_ptr = &hand[j];
+
+			/* Check for matching index */
+			if (i_ptr->index == list[i])
+			{
+				/* Card is eligible */
+				i_ptr->eligible = 1;
+				i_ptr->greedy = 1;
+
+				/* Card should be highlighted when selected */
+				i_ptr->highlight = HIGH_YELLOW;
+			}
+		}
+	}
+
+	/* Redraw everything */
+	redraw_everything();
+
+	/* Process events */
+	process_events();
+
+	/* Loop over cards in hand */
+	for (i = 0; i < hand_size; i++)
+	{
+		/* Get hand pointer */
+		i_ptr = &hand[i];
+
+		/* Check for selected */
+		if (i_ptr->selected)
+		{
+			/* Return selection */
+			return i_ptr->index;
+		}
+	}
+
+	/* No selection made */
+	return -1;
+}
+
+/*
+ * Choose method of payment for a placed card.
+ *
+ * We include some active cards that have powers that can be triggered,
+ * such as the Contact Specialist or Colony Ship.
+ */
+void gui_choose_pay(game *g, int who, int which, int list[], int *num,
+                    int special[], int *num_special, int mil_only)
+{
+	card *c_ptr;
+	displayed *i_ptr;
+	power *o_ptr;
+	char buf[1024];
+	int i, j, n = 0, ns = 0, high_color;
+
+	/* Get card we are paying for */
+	c_ptr = &real_game.deck[which];
+
+	/* Create prompt */
+	sprintf(buf, "Choose payment for %s", c_ptr->d_ptr->name);
+
+	/* Set prompt */
+	label_set_text(buf);
+
+	/* Reset displayed cards */
+	reset_cards(g, false, false);
+
+	/* Set button restriction */
+	action_restrict = RESTRICT_PAY;
+	action_payment_which = which;
+	action_payment_mil = mil_only;
+
+	/* Deactivate action button */
+	widget_set_sensitive(action_check_payment());
+
+	/* Loop over cards in list */
+	for (i = 0; i < *num; i++)
+	{
+		/* Loop over cards in hand */
+		for (j = 0; j < hand_size; j++)
+		{
+			/* Get hand pointer */
+			i_ptr = &hand[j];
+
+			/* Check for matching index */
+			if (i_ptr->index == list[i])
+			{
+				/* Card is eligible */
+				i_ptr->eligible = 1;
+
+				/* Card should be red when selected */
+				i_ptr->highlight = HIGH_RED;
+
+				/* Card should be pushed up when selected */
+				i_ptr->push = 1;
+			}
+		}
+	}
+
+	/* Loop over special cards */
+	for (i = 0; i < *num_special; i++)
+	{
+		/* Assume highlight color will be yellow */
+		high_color = HIGH_YELLOW;
+
+		/* Loop over powers on card */
+		for (j = 0; j < g->deck[special[i]].d_ptr->num_power; j++)
+		{
+			/* Get power pointer */
+			o_ptr = &g->deck[special[i]].d_ptr->powers[j];
+
+			/* Skip non-develop or settle powers */
+			if (o_ptr->phase != PHASE_DEVELOP &&
+			    o_ptr->phase != PHASE_SETTLE) continue;
+
+			/* Check for discard in develop phase */
+			if (o_ptr->phase == PHASE_DEVELOP &&
+			    (o_ptr->code & P2_DISCARD_REDUCE))
+				high_color = HIGH_RED;
+
+			/* Check for discard in settle phase */
+			if (o_ptr->phase == PHASE_SETTLE &&
+			    (o_ptr->code & P3_DISCARD))
+				high_color = HIGH_RED;
+		}
+
+		/* Loop over cards on table */
+		for (j = 0; j < table_size[player_us]; j++)
+		{
+			/* Get table card pointer */
+			i_ptr = &table[player_us][j];
+
+			/* Check for matching index */
+			if (i_ptr->index == special[i])
+			{
+				/* Card is eligible */
+				i_ptr->eligible = 1;
+
+				/* Card should be highlighted when selected */
+				i_ptr->highlight = high_color;
+			}
+		}
+	}
+
+	/* Redraw everything */
+	redraw_everything();
+
+	/* Process events */
+	process_events();
+
+	/* Loop over cards in hand */
+	for (i = 0; i < hand_size; i++)
+	{
+		/* Get hand pointer */
+		i_ptr = &hand[i];
+
+		/* Check for selected */
+		if (i_ptr->selected)
+		{
+			/* Add to list */
+			list[n++] = i_ptr->index;
+		}
+	}
+
+	/* Set number of cards selected */
+	*num = n;
+
+	/* Loop over cards on table */
+	for (i = 0; i < table_size[player_us]; i++)
+	{
+		/* Get table card pointer */
+		i_ptr = &table[player_us][i];
+
+		/* Check for selected */
+		if (i_ptr->selected)
+		{
+			/* Add to list */
+			special[ns++] = i_ptr->index;
+		}
+	}
+
+	/* Set number of special cards selected */
+	*num_special = ns;
+}
+
+/*
+ * Choose a world to attempt a takeover of.
+ *
+ * We must also choose a card showing a takeover power to use.
+ */
+int gui_choose_takeover(game *g, int who, int list[], int *num,
+                        int special[], int *num_special)
+{
+	displayed *i_ptr;
+	power *o_ptr;
+	char buf[1024];
+	int i, j, k, target = -1, high_color;
+
+	/* Create prompt */
+	sprintf(buf, "Choose world to takeover and power to use");
+
+	/* Set prompt */
+	label_set_text(buf);
+
+	/* Reset displayed cards */
+	reset_cards(g, false, false);
+
+	/* Set button restriction */
+	action_restrict = RESTRICT_TAKEOVER;
+
+	/* Activate action button */
+	widget_set_sensitive(true);
+
+	/* Loop over cards in list */
+	for (i = 0; i < *num; i++)
+	{
+		/* Loop over opponents */
+		for (j = 0; j < g->num_players; j++)
+		{
+			/* Skip our own cards */
+			if (j == player_us) continue;
+
+			/* Loop over opponent's table cards */
+			for (k = 0; k < table_size[j]; k++)
+			{
+				/* Get displayed card's pointer */
+				i_ptr = &table[j][k];
+
+				/* Check for matching index */
+				if (i_ptr->index == list[i])
+				{
+					/* Card is eligible */
+					i_ptr->eligible = 1;
+					i_ptr->highlight = HIGH_YELLOW;
+				}
+			}
+		}
+	}
+
+	/* Loop over special cards */
+	for (i = 0; i < *num_special; i++)
+	{
+		/* Assume highlight color will be yellow */
+		high_color = HIGH_YELLOW;
+
+		/* Loop over powers on card */
+		for (j = 0; j < g->deck[special[i]].d_ptr->num_power; j++)
+		{
+			/* Get power pointer */
+			o_ptr = &g->deck[special[i]].d_ptr->powers[j];
+
+			/* Skip non-settle powers */
+			if (o_ptr->phase != PHASE_SETTLE) continue;
+
+			/* Skip non-takeover powers */
+			if (!(o_ptr->code & (P3_TAKEOVER_REBEL |
+			                     P3_TAKEOVER_IMPERIUM |
+			                     P3_TAKEOVER_MILITARY |
+			                     P3_TAKEOVER_PRESTIGE))) continue;
+
+			/* Check for discard to use power */
+			if (o_ptr->code & P3_DISCARD) high_color = HIGH_RED;
+		}
+
+		/* Loop over cards on table */
+		for (j = 0; j < table_size[player_us]; j++)
+		{
+			/* Get table card pointer */
+			i_ptr = &table[player_us][j];
+
+			/* Check for matching index */
+			if (i_ptr->index == special[i])
+			{
+				/* Card is eligible */
+				i_ptr->eligible = 1;
+
+				/* Card should be highlighted when selected */
+				i_ptr->highlight = high_color;
+			}
+		}
+	}
+
+	/* Redraw everything */
+	redraw_everything();
+
+	/* Process events */
+	process_events();
+
+	/* Loop over cards on table */
+	for (i = 0; i < table_size[player_us]; i++)
+	{
+		/* Get table card pointer */
+		i_ptr = &table[player_us][i];
+
+		/* Check for selected */
+		if (i_ptr->selected)
+		{
+			/* Use this card's takeover power */
+			special[0] = i_ptr->index;
+		}
+	}
+
+	/* Set number of special cards selected */
+	*num_special = 1;
+
+	/* Loop over opponents */
+	for (i = 0; i < g->num_players; i++)
+	{
+		/* Skip our own cards */
+		if (i == player_us) continue;
+
+		/* Loop over opponent's table cards */
+		for (j = 0; j < table_size[i]; j++)
+		{
+			/* Get displayed card's pointer */
+			i_ptr = &table[i][j];
+
+			/* Check for selected */
+			if (i_ptr->selected)
+			{
+				/* Remember target */
+				target = i_ptr->index;
+			}
+		}
+	}
+
+	/* Return target */
+	return target;
+}
+
+/*
+ * Choose a method to defend against a takeover.
+ */
+void gui_choose_defend(game *g, int who, int which, int opponent, int deficit,
+                       int list[], int *num, int special[], int *num_special)
+{
+	card *c_ptr;
+	displayed *i_ptr;
+	power *o_ptr;
+	char buf[1024];
+	int i, j, n = 0, ns = 0, high_color;
+
+	/* Get card we are defending */
+	c_ptr = &real_game.deck[which];
+
+	/* Create prompt */
+	sprintf(buf, "Choose defense for %s (need %d extra military)",
+	        c_ptr->d_ptr->name, deficit + 1);
+
+	/* Set prompt */
+	label_set_text(buf);
+
+	/* Reset displayed cards */
+	reset_cards(g, false, true);
+
+	/* Set button restriction */
+	action_restrict = RESTRICT_DEFEND;
+
+	/* Deactivate action button */
+	widget_set_sensitive(true);
+
+	/* Loop over cards in list */
+	for (i = 0; i < *num; i++)
+	{
+		/* Loop over cards in hand */
+		for (j = 0; j < hand_size; j++)
+		{
+			/* Get hand pointer */
+			i_ptr = &hand[j];
+
+			/* Check for matching index */
+			if (i_ptr->index == list[i])
+			{
+				/* Card is eligible */
+				i_ptr->eligible = 1;
+				
+				/* Highlight card in red when selected */
+				i_ptr->highlight = HIGH_RED;
+
+				/* Card should be pushed up when selected */
+				i_ptr->push = 1;
+			}
+		}
+	}
+
+	/* Loop over special cards */
+	for (i = 0; i < *num_special; i++)
+	{
+		/* Assume highlight color will be yellow */
+		high_color = HIGH_YELLOW;
+
+		/* Loop over powers on card */
+		for (j = 0; j < g->deck[special[i]].d_ptr->num_power; j++)
+		{
+			/* Get power pointer */
+			o_ptr = &g->deck[special[i]].d_ptr->powers[j];
+
+			/* Skip non-settle powers */
+			if (o_ptr->phase != PHASE_SETTLE) continue;
+
+			/* Check for discard to use power */
+			if (o_ptr->code & P3_DISCARD) high_color = HIGH_RED;
+		}
+
+		/* Loop over cards on table */
+		for (j = 0; j < table_size[player_us]; j++)
+		{
+			/* Get table card pointer */
+			i_ptr = &table[player_us][j];
+
+			/* Check for matching index */
+			if (i_ptr->index == special[i])
+			{
+				/* Card is eligible */
+				i_ptr->eligible = 1;
+
+				/* Card should be highlighted when selected */
+				i_ptr->highlight = high_color;
+			}
+		}
+	}
+
+	/* Redraw everything */
+	redraw_everything();
+
+	/* Process events */
+	process_events();
+
+	/* Loop over cards in hand */
+	for (i = 0; i < hand_size; i++)
+	{
+		/* Get hand pointer */
+		i_ptr = &hand[i];
+
+		/* Check for selected */
+		if (i_ptr->selected)
+		{
+			/* Add to list */
+			list[n++] = i_ptr->index;
+		}
+	}
+
+	/* Set number of cards selected */
+	*num = n;
+
+	/* Loop over cards on table */
+	for (i = 0; i < table_size[player_us]; i++)
+	{
+		/* Get table card pointer */
+		i_ptr = &table[player_us][i];
+
+		/* Check for selected */
+		if (i_ptr->selected)
+		{
+			/* Add to list */
+			special[ns++] = i_ptr->index;
+		}
+	}
+
+	/* Set number of special cards selected */
+	*num_special = ns;
+}
+
+/*
+ * Choose a world to upgrade.
+ */
+void gui_choose_upgrade(game *g, int who, int list[], int *num, int special[],
+                        int *num_special)
+{
+	displayed *i_ptr;
+	char buf[1024];
+	int i, j, n = 0, ns = 0;
+
+	/* Create prompt */
+	sprintf(buf, "Choose world to replace");
+
+	/* Set prompt */
+	label_set_text(buf);
+
+	/* Reset displayed cards */
+	reset_cards(g, false, false);
+
+	/* Set button restriction */
+	action_restrict = RESTRICT_UPGRADE;
+
+	/* Activate action button */
+	widget_set_sensitive(true);
+
+	/* Loop over cards in list */
+	for (i = 0; i < *num; i++)
+	{
+		/* Loop over cards in hand */
+		for (j = 0; j < hand_size; j++)
+		{
+			/* Get hand pointer */
+			i_ptr = &hand[j];
+
+			/* Check for matching index */
+			if (i_ptr->index == list[i])
+			{
+				/* Card is eligible */
+				i_ptr->eligible = 1;
+
+				/* Card should be highlighted when selected */
+				i_ptr->highlight = HIGH_YELLOW;
+			}
+		}
+	}
+
+	/* Loop over special cards */
+	for (i = 0; i < *num_special; i++)
+	{
+		/* Loop over cards on table */
+		for (j = 0; j < table_size[player_us]; j++)
+		{
+			/* Get table card pointer */
+			i_ptr = &table[player_us][j];
+
+			/* Check for matching index */
+			if (i_ptr->index == special[i])
+			{
+				/* Card is eligible */
+				i_ptr->eligible = 1;
+
+				/* Card should be highlighted when selected */
+				i_ptr->highlight = HIGH_RED;
+			}
+		}
+	}
+
+	/* Redraw everything */
+	redraw_everything();
+
+	/* Process events */
+	process_events();
+
+	/* Loop over cards in hand */
+	for (i = 0; i < hand_size; i++)
+	{
+		/* Get hand pointer */
+		i_ptr = &hand[i];
+
+		/* Check for selected */
+		if (i_ptr->selected)
+		{
+			/* Add to list */
+			list[n++] = i_ptr->index;
+		}
+	}
+
+	/* Set number of cards selected */
+	*num = n;
+
+	/* Loop over cards on table */
+	for (i = 0; i < table_size[player_us]; i++)
+	{
+		/* Get table card pointer */
+		i_ptr = &table[player_us][i];
+
+		/* Check for selected */
+		if (i_ptr->selected)
+		{
+			/* Add to list */
+			special[ns++] = i_ptr->index;
+		}
+	}
+
+	/* Set number of special cards selected */
+	*num_special = ns;
+}
+
+/*
+ * Choose a good to trade.
+ */
+void gui_choose_trade(game *g, int who, int list[], int *num, int no_bonus)
+{
+	char buf[1024];
+	displayed *i_ptr;
+	int i, j;
+
+	/* Create prompt */
+	sprintf(buf, "Choose good to trade%s", no_bonus ? " (no bonuses)" : "");
+
+	/* Set prompt */
+	label_set_text(buf);
+
+	/* Set restrictions on action button */
+	action_restrict = RESTRICT_NUM;
+	action_min = action_max = 1;
+
+	/* Deactivate action button */
+	widget_set_sensitive(false);
+
+	/* Reset displayed cards */
+	reset_cards(g, true, false);
+
+	/* Loop over cards in list */
+	for (i = 0; i < *num; i++)
+	{
+		/* Loop over cards on table */
+		for (j = 0; j < table_size[player_us]; j++)
+		{
+			/* Get displayed card pointer */
+			i_ptr = &table[player_us][j];
+
+			/* Check for matching index */
+			if (i_ptr->index == list[i])
+			{
+				/* Card is eligible */
+				i_ptr->eligible = 1;
+
+				/* Push good upwards when selected */
+				i_ptr->push = 1;
+			}
+		}
+	}
+
+	/* Redraw everything */
+	redraw_everything();
+
+	/* Process events */
+	process_events();
+
+	/* Loop over cards on table */
+	for (i = 0; i < table_size[player_us]; i++)
+	{
+		/* Get displayed card pointer */
+		i_ptr = &table[player_us][i];
+
+		/* Check for selected */
+		if (i_ptr->selected)
+		{
+			/* Set choice */
+			list[0] = i_ptr->index;
+			*num = 1;
+
+			/* Done */
+			break;
+		}
+	}
+}
+
+/*
+ * Consume cards from hand.
+ */
+void gui_choose_consume_hand(game *g, int who, int c_idx, int o_idx, int list[],
+                             int *num)
+{
+	card *c_ptr;
+	power *o_ptr, prestige_bonus;
+	char buf[1024], *card_name;
+	displayed *i_ptr;
+	int i, j, n = 0;
+
+	/* Check for prestige trade bonus power */
+	if (c_idx < 0)
+	{
+		/* Make fake power */
+		prestige_bonus.phase = PHASE_CONSUME;
+		prestige_bonus.code = P4_DISCARD_HAND | P4_GET_VP;
+		prestige_bonus.value = 1;
+		prestige_bonus.times = 2;
+
+		/* Use fake power */
+		o_ptr = &prestige_bonus;
+
+		/* Use fake card name */
+		card_name = "Prestige Trade bonus";
+	}
+	else
+	{
+		/* Get card pointer */
+		c_ptr = &g->deck[c_idx];
+
+		/* Get power pointer */
+		o_ptr = &c_ptr->d_ptr->powers[o_idx];
+
+		/* Use card name */
+		card_name = c_ptr->d_ptr->name;
+	}
+
+	/* Check for needing two cards */
+	if (o_ptr->code & P4_CONSUME_TWO)
+	{
+		/* Create prompt */
+		sprintf(buf, "Choose cards to consume on %s", card_name);
+	}
+	else
+	{
+		/* Create prompt */
+		sprintf(buf, "Choose up to %d cards to consume on %s",
+		        o_ptr->times, card_name);
+	}
+
+	/* Set prompt */
+	label_set_text(buf);
+
+	/* Set restrictions on action button */
+	action_restrict = RESTRICT_CONSUME;
+	action_cidx = c_idx;
+	action_oidx = o_idx;
+
+	/* Activate action button */
+	widget_set_sensitive(true);
+
+	/* Reset displayed cards */
+	reset_cards(g, false, true);
+
+	/* Loop over cards in list */
+	for (i = 0; i < *num; i++)
+	{
+		/* Loop over cards in hand */
+		for (j = 0; j < hand_size; j++)
+		{
+			/* Get hand pointer */
+			i_ptr = &hand[j];
+
+			/* Check for matching index */
+			if (i_ptr->index == list[i])
+			{
+				/* Card is eligible */
+				i_ptr->eligible = 1;
+
+				/* Card should be red when selected */
+				i_ptr->highlight = HIGH_RED;
+
+				/* Card should be pushed up when selected */
+				i_ptr->push = 1;
+			}
+		}
+	}
+
+	/* Redraw everything */
+	redraw_everything();
+
+	/* Process events */
+	process_events();
+
+	/* Loop over cards in hand */
+	for (i = 0; i < hand_size; i++)
+	{
+		/* Get hand pointer */
+		i_ptr = &hand[i];
+
+		/* Check for selected */
+		if (i_ptr->selected)
+		{
+			/* Add to list */
+			list[n++] = i_ptr->index;
+		}
+	}
+
+	/* Set number of cards selected */
+	*num = n;
+}
+
+/*
+ * Choose good(s) to consume.
+ */
+void gui_choose_good(game *g, int who, int c_idx, int o_idx, int goods[],
+                     int *num, int min, int max)
+{
+	card *c_ptr;
+	char buf[1024];
+	displayed *i_ptr;
+	int i, j, n = 0;
+
+	/* Get pointer to card holding consume power */
+	c_ptr = &real_game.deck[c_idx];
+
+	/* Create prompt */
+	sprintf(buf, "Choose goods to consume on %s", c_ptr->d_ptr->name);
+
+	/* Set prompt */
+	label_set_text(buf);
+
+	/* Set restrictions on action button */
+	action_restrict = RESTRICT_GOOD;
+	action_min = min;
+	action_max = max;
+	action_cidx = c_idx;
+	action_oidx = o_idx;
+
+	/* Deactivate action button */
+	widget_set_sensitive(min == 0);
+
+	/* Reset displayed cards */
+	reset_cards(g, true, false);
+
+	/* Loop over cards in list */
+	for (i = 0; i < *num; i++)
+	{
+		/* Loop over cards on table */
+		for (j = 0; j < table_size[player_us]; j++)
+		{
+			/* Get displayed card pointer */
+			i_ptr = &table[player_us][j];
+
+			/* Check for matching index */
+			if (i_ptr->index == goods[i])
+			{
+				/* Card is eligible */
+				i_ptr->eligible = 1;
+
+				/* Push good upwards when selected */
+				i_ptr->push = 1;
+			}
+		}
+	}
+
+	/* Redraw everything */
+	redraw_everything();
+
+	/* Process events */
+	process_events();
+
+	/* Loop over cards on table */
+	for (i = 0; i < table_size[player_us]; i++)
+	{
+		/* Get displayed card pointer */
+		i_ptr = &table[player_us][i];
+
+		/* Check for selected */
+		if (i_ptr->selected)
+		{
+			/* Add to list */
+			goods[n++] = i_ptr->index;
+		}
+	}
+
+	/* Set number of goods chosen */
+	*num = n;
+}
+
+/*
+ * Choose card to ante.
+ */
+int gui_choose_ante(game *g, int who, int list[], int num)
+{
+	char buf[1024];
+	displayed *i_ptr;
+	int i, j;
+
+	/* Create prompt */
+	sprintf(buf, "Choose card to ante");
+
+	/* Set prompt */
+	label_set_text(buf);
+
+	/* Set restrictions on action button */
+	action_restrict = RESTRICT_NUM;
+	action_min = 0;
+	action_max = 1;
+
+	/* Activate action button */
+	widget_set_sensitive(true);
+
+	/* Reset displayed cards */
+	reset_cards(g, false, true);
+
+	/* Loop over cards in list */
+	for (i = 0; i < num; i++)
+	{
+		/* Loop over cards in hand */
+		for (j = 0; j < hand_size; j++)
+		{
+			/* Get hand pointer */
+			i_ptr = &hand[j];
+
+			/* Check for matching index */
+			if (i_ptr->index == list[i])
+			{
+				/* Card is eligible */
+				i_ptr->eligible = 1;
+
+				/* Card should be pushed up when selected */
+				i_ptr->push = 1;
+			}
+		}
+	}
+
+	/* Redraw everything */
+	redraw_everything();
+
+	/* Process events */
+	process_events();
+
+	/* Loop over cards in hand */
+	for (i = 0; i < hand_size; i++)
+	{
+		/* Get hand pointer */
+		i_ptr = &hand[i];
+
+		/* Check for selected */
+		if (i_ptr->selected)
+		{
+			/* Return selected card */
+			return i_ptr->index;
+		}
+	}
+
+	/* No card selected */
+	return -1;
+}
+
+/*
+ * Choose a card to keep from a successful gamble.
+ */
+int gui_choose_keep(game *g, int who, int list[], int num)
+{
+	card *c_ptr;
+	displayed *i_ptr;
+	char buf[1024];
+	int i;
+
+	/* Check for only one choice */
+	if (num == 1) return list[0];
+
+	/* Create prompt */
+	sprintf(buf, "Choose card to keep");
+
+	/* Set prompt */
+	label_set_text(buf);
+
+	/* Reset displayed cards */
+	reset_cards(g, false, true);
+
+	/* Set button restriction */
+	action_restrict = RESTRICT_NUM;
+	action_min = action_max = 1;
+
+	/* Deactivate action button */
+	widget_set_sensitive(false);
+
+	/* Add cards to "hand" */
+	for (i = 0; i < num; i++)
+	{
+		/* Get card pointer */
+		c_ptr = &real_game.deck[list[i]];
+
+		/* Get next entry in hand list */
+		i_ptr = &hand[hand_size++];
+
+		/* Reset structure */
+		reset_display(i_ptr);
+
+		/* Add card information */
+		i_ptr->index = list[i];
+		i_ptr->d_ptr = c_ptr->d_ptr;
+
+		/* Card is in hand */
+		i_ptr->hand = 1;
+
+		/* Card is eligible */
+		i_ptr->eligible = 1;
+		i_ptr->gapped = 1;
+		i_ptr->greedy = 1;
+
+		/* Highlight card when selected */
+		i_ptr->highlight = HIGH_YELLOW;
+		i_ptr->highlight_else = HIGH_RED;
+	}
+
+	/* Redraw everything */
+	redraw_everything();
+
+	/* Process events */
+	process_events();
+
+	/* Loop over cards in hand */
+	for (i = 0; i < hand_size; i++)
+	{
+		/* Get hand pointer */
+		i_ptr = &hand[i];
+
+		/* Check for selected */
+		if (i_ptr->selected)
+		{
+			/* Return choice */
+			return i_ptr->index;
+		}
+	}
+
+	/* Error */
+	return -1;
+}
+
+/*
+ * Choose a windfall world to produce on.
+ */
+void gui_choose_windfall(game *g, int who, int list[], int *num)
+{
+	char buf[1024];
+	displayed *i_ptr;
+	int i, j;
+
+	/* Create prompt */
+	sprintf(buf, "Choose windfall world to produce");
+
+	/* Set prompt */
+	label_set_text(buf);
+
+	/* Set restrictions on action button */
+	action_restrict = RESTRICT_NUM;
+	action_min = action_max = 1;
+
+	/* Deactivate action button */
+	widget_set_sensitive(false);
+
+	/* Reset displayed cards */
+	reset_cards(g, true, false);
+
+	/* Loop over cards in list */
+	for (i = 0; i < *num; i++)
+	{
+		/* Loop over cards on table */
+		for (j = 0; j < table_size[player_us]; j++)
+		{
+			/* Get displayed card pointer */
+			i_ptr = &table[player_us][j];
+
+			/* Check for matching index */
+			if (i_ptr->index == list[i])
+			{
+				/* Card is eligible */
+				i_ptr->eligible = 1;
+
+				/* Only one card can be selected */
+				i_ptr->greedy = 1;
+
+				/* Push good upwards when selected */
+				i_ptr->push = 1;
+			}
+		}
+	}
+
+	/* Redraw everything */
+	redraw_everything();
+
+	/* Process events */
+	process_events();
+
+	/* Loop over cards on table */
+	for (i = 0; i < table_size[player_us]; i++)
+	{
+		/* Get displayed card pointer */
+		i_ptr = &table[player_us][i];
+
+		/* Check for selected */
+		if (i_ptr->selected)
+		{
+			/* Set choice */
+			list[0] = i_ptr->index;
+			*num = 1;
+		}
+	}
+}
+
+/*
+ * Discard a card in order to produce.
+ */
+void gui_choose_discard_produce(game *g, int who, int list[], int *num,
+                                int special[], int *num_special)
+{
+	char buf[1024];
+	displayed *i_ptr;
+	int i, j;
+
+	/* Create prompt */
+	sprintf(buf, "Choose discard to produce");
+
+	/* Set prompt */
+	label_set_text(buf);
+
+	/* Set restrictions on action button */
+	action_restrict = RESTRICT_BOTH;
+	action_min = 0;
+	action_max = 1;
+
+	/* Activate action button */
+	widget_set_sensitive(true);
+
+	/* Reset displayed cards */
+	reset_cards(g, false, false);
+
+	/* Loop over cards in list */
+	for (i = 0; i < *num; i++)
+	{
+		/* Loop over cards in hand */
+		for (j = 0; j < hand_size; j++)
+		{
+			/* Get hand pointer */
+			i_ptr = &hand[j];
+			
+			/* Check for matching index */
+			if (i_ptr->index == list[i])
+			{
+				/* Card is eligible */
+				i_ptr->eligible = 1;
+				
+				/* Card should be red when selected */
+				i_ptr->highlight = HIGH_RED;
+				
+				/* Card should be pushed up when selected */
+				i_ptr->push = 1;
+			}
+		}
+	}
+
+	/* Loop over special cards */
+	for (i = 0; i < *num_special; i++)
+	{
+		/* Loop over cards on table */
+		for (j = 0; j < table_size[player_us]; j++)
+		{
+			/* Get table card pointer */
+			i_ptr = &table[player_us][j];
+			
+			/* Check for matching index */
+			if (i_ptr->index == special[i])
+			{
+				/* Card is eligible */
+				i_ptr->eligible = 1;
+				
+				/* Card should be highlighted when selected */
+				i_ptr->highlight = HIGH_YELLOW;
+				
+				/* Check for only choice */
+				if (*num_special == 1)
+				{
+					/* Start with card selected */
+					i_ptr->selected = 1;
+				}
+			}
+		}
+	}
+
+	/* Redraw everything */
+	redraw_everything();
+
+	/* Process events */
+	process_events();
+
+	/* Assume no choice made */
+	*num = *num_special = 0;
+
+	/* Loop over cards in hand */
+	for (i = 0; i < hand_size; i++)
+		{
+			/* Get hand pointer */
+			i_ptr = &hand[i];
+
+			/* Check for selected */
+			if (i_ptr->selected)
+				{
+					/* Set choice */
+					list[0] = i_ptr->index;
+					*num = 1;
+				}
+		}
+
+	/* Loop over cards on table */
+	for (i = 0; i < table_size[player_us]; i++)
+		{
+			/* Get displayed card pointer */
+			i_ptr = &table[player_us][i];
+
+			/* Check for selected */
+			if (i_ptr->selected)
+				{
+					/* Set choice */
+					special[0] = i_ptr->index;
+					*num_special = 1;
+				}
+		}
+
+	/* Check for only one or the other choice made */
+	if (!(*num) || !(*num_special))
+		{
+			/* Clear selection */
+			*num = *num_special = 0;
+		}
+}
+
+/*
+ * Run games forever.
+ */
+void run_game(void)
+{
+	char buf[1024];
+	int i;
+
+	/* Loop forever */
+	while (1)
+	{
+		/* Check for new game starting */
+		if (restart_loop == RESTART_NEW)
+		{
+			/* Reset game */
+			reset_gui();
+
+			/* Loop over players */
+			for (i = 0; i < real_game.num_players; i++)
+			{
+				/* Clear choice log */
+				real_game.p[i].choice_size = 0;
+				real_game.p[i].choice_pos = 0;
+			}
+
+			/* Clear undos */
+			num_undo = 0;
+
+			/* Initialize game */
+			init_game(&real_game);
+		}
+
+		/* Holding pattern for multiplayer */
+		else if (restart_loop == RESTART_NONE)
+		{
+			/* Do nothing until disconnected from server */
+			while (restart_loop == RESTART_NONE)
+			{
+				/* Wait for events */
+				process_events();
+			}
+
+			/* Start a new game */
+			restart_loop = RESTART_NEW;
+			continue;
+		}
+
+		/* Undo previous turn */
+		else if (restart_loop == RESTART_UNDO)
+		{
+			/* Start with start of game random seed */
+			real_game.random_seed = real_game.start_seed;
+
+			/* Initialize game */
+			init_game(&real_game);
+
+			/* Remove one state from undo list */
+			if (num_undo > 0) num_undo--;
+
+			/* Reset our position and GUI elements */
+			reset_gui();
+
+			/* Loop over players */
+			for (i = 0; i < real_game.num_players; i++)
+			{
+				/* Start at beginning of log */
+				real_game.p[i].choice_pos = 0;
+
+				/* Set end of choice log */
+				real_game.p[i].choice_size =
+				        real_game.p[i].choice_history[num_undo];
+			}
+		}
+
+		/* Load a new game */
+		else if (restart_loop == RESTART_LOAD)
+		{
+			/* Start with start of game random seed */
+			real_game.random_seed = real_game.start_seed;
+
+			/* Clear undos */
+			num_undo = 0;
+
+			/* Initialize game */
+			init_game(&real_game);
+
+			/* Modify GUI for new game parameters */
+			modify_gui();
+
+			/* Reset our position and GUI elements */
+			reset_gui();
+		}
+
+		/* Clear restart loop flag */
+		restart_loop = 0;
+
+		/* Begin game */
+		begin_game(&real_game);
+
+		/* Check for aborted game */
+		if (real_game.game_over) continue;
+
+		/* Play game rounds until finished */
+		while (game_round(&real_game));
+
+		/* Check for restart request */
+		if (restart_loop)
+		{
+			/* Restart loop */
+			continue;
+		}
+
+		/* Declare winner */
+		declare_winner(&real_game);
+
+		/* Reset displayed cards */
+		reset_cards(&real_game, true, true);
+
+		/* Redraw everything */
+		redraw_everything();
+
+		/* Create prompt */
+		sprintf(buf, "Game Over");
+
+		/* Set prompt */
+		label_set_text(buf);
+
+		/* Process events */
+		process_events();
+	}
+}
+
+/*
+ * Reset player structures.
+ */
+void reset_gui(void)
+{
+	int i;
+
+	/* Reset our player index */
+	player_us = 0;
+
+	/* Restore opponent areas to original */
+	for (i = 0; i < MAX_PLAYER; i++)
+	{
+		/* Restore table area */
+		restore_table_area(i);
+		//player_area[i] = orig_area[i];
+
+		/* Restore status area */
+		restore_status_area(i);
+		//player_status[i] = orig_status[i];
+	}
+
+	/* Loop over all possible players */
+	for (i = 0; i < MAX_PLAYER; i++)
+	{
+		/* Set name */
+		real_game.p[i].name = player_names[i];
+
+		/* Restore choice log */
+		real_game.p[i].choice_log = orig_log[i];
+		real_game.p[i].choice_history = orig_history[i];
+	}
+
+	/* Restore player control functions */
+	real_game.p[player_us].control = &gui_func;
+
+	/* Loop over AI players */
+	for (i = 1; i < MAX_PLAYER; i++)
+	{
+		/* Set control to AI functions */
+		real_game.p[i].control = &ai_func;
+
+		/* Call initialization function */
+		real_game.p[i].control->init(&real_game, i, 0.0);
+	}
+
+	/* Clear message log */
+	clear_log();
+}
 
