@@ -6,7 +6,7 @@ endif
 dist_bin_SCRIPTS = do_train
 
 rftg_SOURCES = engine.c init.c ai.c loadsave.c gui.c net.c net.h rftg.h \
-               client.c client.h comm.c comm.h
+               client.c client.h comm.c comm.h common-gui.c
 learner_SOURCES = engine.c init.c ai.c learner.c net.c net.h rftg.h
 dumpnet_SOURCES = net.c dumpnet.c net.h
 server_SOURCES = server.c engine.c init.c ai.c loadsave.c net.c net.h rftg.h \

@@ -845,6 +845,206 @@ typedef struct game
 
 } game;
 
+/*
+ * Information about a displayed card.
+ */
+typedef struct displayed
+{
+	/* Card's index in the deck */
+	int index;
+
+	/* Card's design pointer */
+	design *d_ptr;
+
+	/* Card is in hand (instead of on table) */
+	int hand;
+
+	/* Card is eligible for being chosen */
+	int eligible;
+
+	/* Card should be seperated from others */
+	int gapped;
+
+	/* Card is selected */
+	int selected;
+
+	/* Card should deselect all others when selected */
+	int greedy;
+
+	/* Card should be highlighted in this color when selected */
+	int highlight;
+
+	/* Card should be highlighted in this color when not selected */
+	int highlight_else;
+
+	/* Card should be "pushed up" when selected */
+	int push;
+
+	/* Card is not eligible for selection, but should be colored anyway */
+	int color;
+
+	/* Card is covered (by a good) */
+	int covered;
+
+	/* Order card was played in (if on table) */
+	int order;
+
+	/* Tooltip to display (if any) */
+	char *tooltip;
+
+} displayed;
+
+/*
+ * Cached status information to be displayed per player.
+ */
+typedef struct status_display
+{
+	/* Name to display */
+	char name[80];
+
+	/* Actions */
+	int action[2];
+
+	/* Victory point chips */
+	int vp;
+
+	/* Total victory points */
+	int end_vp;
+
+	/* Cards in hand */
+	int cards_hand;
+
+	/* Prestige */
+	int prestige;
+
+	/* Military strength */
+	int military;
+
+	/* Text of military strength tooltip */
+	char military_tip[1024];
+
+	/* Array of goals to display */
+	int goal_display[MAX_GOAL];
+
+	/* Array of goals to be grayed out */
+	int goal_gray[MAX_GOAL];
+
+	/* Array of goal tooltips */
+	char goal_tip[MAX_GOAL][1024];
+
+} status_display;
+
+/*
+ * Array of displayed status information per player.
+ */
+status_display status_player[MAX_PLAYER];
+
+/*
+ * List of cards on table (per player).
+ */
+displayed table[MAX_PLAYER][MAX_DECK];
+int table_size[MAX_PLAYER];
+
+/*
+ * Current (real) game state.
+ */
+game real_game;
+
+/*
+ * Player names.
+ */
+__attribute__((unused))
+static char *player_names[MAX_PLAYER] =
+{
+	"Blue",
+	"Red",
+	"Green",
+	"Yellow",
+	"Cyan",
+	"Purple",
+};
+
+/*
+ * Store a power's location.
+ */
+typedef struct pow_loc
+{
+	/* Card index */
+	int c_idx;
+
+	/* Power index */
+	int o_idx;
+
+} pow_loc;
+
+/*
+ * User options.
+ */
+typedef struct options
+{
+	/* Number of players */
+	int num_players;
+
+	/* Expansion level */
+	int expanded;
+
+	/* Two-player advanced game */
+	int advanced;
+
+	/* Disable goals */
+	int disable_goal;
+
+	/* Disable takeovers */
+	int disable_takeover;
+
+	/* Reduce/eliminate full-size card image */
+	int full_reduced;
+
+	/* Shrink opponent areas to fit without scrolling */
+	int shrink_opponent;
+
+	/* Server name to connect to */
+	char *server_name;
+
+	/* Server port */
+	int server_port;
+
+	/* Username to connect as */
+	char *username;
+
+	/* Password */
+	char *password;
+
+	/* Game description when creating */
+	char *game_desc;
+
+	/* Game password when creating */
+	char *game_pass;
+
+	/* Number of players in multiplayer */
+	int multi_min;
+	int multi_max;
+
+} options;
+
+
+/*
+ * Special icon numbers.
+ */
+#define ICON_NO_ACT    10
+#define ICON_HANDSIZE  11
+#define ICON_VP        12
+#define ICON_MILITARY  13
+#define ICON_PRESTIGE  14
+#define ICON_WAITING   15
+#define ICON_READY     16
+#define ICON_OPTION    17
+#define ICON_DISCARD   18
+
+/*
+ * Number of action card images.
+ */
+#define MAX_ACT_CARD   11
 
 /*
  * External variables.
@@ -854,6 +1054,12 @@ extern char *goal_name[MAX_GOAL];
 extern char *search_name[MAX_SEARCH];
 extern decisions ai_func;
 extern decisions gui_func;
+extern int display_deck, display_discard, display_pool;
+extern int hand_size;
+extern int player_us;
+extern displayed hand[MAX_DECK];
+extern int num_undo;
+extern options opt;
 
 /*
  * External functions.
@@ -932,3 +1138,55 @@ extern void ai_debug(game *g, double win_prob[MAX_PLAYER][MAX_PLAYER],
 
 extern int load_game(game *g, char *filename);
 extern int save_game(game *g, char *filename, int player_us);
+extern void reset_display(displayed *i_ptr);
+extern char *goal_tooltip(game *g, int goal);
+extern void redraw_status(void);
+extern void redraw_phase(void);
+extern void redraw_hand(void);
+extern void redraw_table(void);
+extern void redraw_goal(void);
+extern int action_check_start(void);
+extern void apply_options(void);
+extern void debug_card_moved(int c, int old_owner, int old_where);
+extern void gui_make_choice(game *g, int who, int type, int list[], int *nl,
+			    int special[], int *ns, int arg1, int arg2, int arg3);
+extern int cmp_hand(const void *h1, const void *h2);
+extern int cmp_consume(const void *l1, const void *l2);
+extern void gui_choose_action(game *g, int who, int action[2], int one);
+extern void gui_choose_start(game *g, int who, int list[], int *num, int special[],
+			     int *num_special);
+extern void gui_choose_discard(game *g, int who, int list[], int *num, int discard);
+extern int gui_choose_place(game *g, int who, int list[], int num, int phase,
+			    int special);
+extern void gui_choose_pay(game *g, int who, int which, int list[], int *num,
+			   int special[], int *num_special, int mil_only);
+extern int gui_choose_takeover(game *g, int who, int list[], int *num,
+			       int special[], int *num_special);
+extern void gui_choose_defend(game *g, int who, int which, int opponent, int deficit,
+			      int list[], int *num, int special[], int *num_special);
+extern void gui_choose_takeover_prevent(game *g, int who, int list[], int *num,
+					int special[], int *num_special);
+extern void gui_choose_upgrade(game *g, int who, int list[], int *num, int special[],
+			       int *num_special);
+extern void gui_choose_trade(game *g, int who, int list[], int *num, int no_bonus);
+extern void gui_choose_consume(game *g, int who, int cidx[], int oidx[], int *num,
+			       int *num_special, int optional);
+extern void gui_choose_consume_hand(game *g, int who, int c_idx, int o_idx, int list[],
+				    int *num);
+extern void gui_choose_good(game *g, int who, int c_idx, int o_idx, int goods[],
+			    int *num, int min, int max);
+extern void gui_choose_save(game *g, int who, int list[], int *num);
+extern void gui_choose_discard_prestige(game *g, int who, int list[], int *num);
+extern int gui_choose_place(game *g, int who, int list[], int num, int phase,
+			    int special);
+extern int gui_choose_lucky(game *g, int who);
+extern int gui_choose_ante(game *g, int who, int list[], int num);
+extern int gui_choose_keep(game *g, int who, int list[], int num);
+extern void gui_choose_windfall(game *g, int who, int list[], int *num);
+extern void gui_choose_produce(game *g, int who, int cidx[], int oidx[], int num);
+extern void gui_choose_discard_produce(game *g, int who, int list[], int *num,
+				       int special[], int *num_special);
+extern int gui_choose_search_type(game *g, int who);
+extern int gui_choose_search_keep(game *g, int who, int arg1, int arg2);
+extern int gui_choose_oort_kind(game *g, int who);
+

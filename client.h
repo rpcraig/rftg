@@ -6,56 +6,6 @@
 #define RESTART_UNDO 3
 #define RESTART_NONE 4
 
-/*
- * User options.
- */
-typedef struct options
-{
-	/* Number of players */
-	int num_players;
-
-	/* Expansion level */
-	int expanded;
-
-	/* Two-player advanced game */
-	int advanced;
-
-	/* Disable goals */
-	int disable_goal;
-
-	/* Disable takeovers */
-	int disable_takeover;
-
-	/* Reduce/eliminate full-size card image */
-	int full_reduced;
-
-	/* Shrink opponent areas to fit without scrolling */
-	int shrink_opponent;
-
-	/* Server name to connect to */
-	char *server_name;
-
-	/* Server port */
-	int server_port;
-
-	/* Username to connect as */
-	char *username;
-
-	/* Password */
-	char *password;
-
-	/* Game description when creating */
-	char *game_desc;
-
-	/* Game password when creating */
-	char *game_pass;
-
-	/* Number of players in multiplayer */
-	int multi_min;
-	int multi_max;
-
-} options;
-
 extern options opt;
 extern GtkListStore *user_list;
 extern GtkTreeStore *game_list;
