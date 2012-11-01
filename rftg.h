@@ -1,3 +1,6 @@
+#ifndef _RFTG_H
+#define _RFTG_H
+
 /*
  * Race for the Galaxy AI
  * 
@@ -35,7 +38,11 @@
  * Default data directory if not otherwise specified.
  */
 #ifndef RFTGDIR
+#ifdef ANDROID
+# define RFTGDIR "/sdcard"
+#else
 # define RFTGDIR "."
+#endif
 #endif
 
 /*
@@ -1074,6 +1081,19 @@ typedef struct options
 #define RESTART_UNDO 3
 #define RESTART_NONE 4
 
+/*
+ * Card image size.
+ */
+#define CARD_WIDTH 372
+#define CARD_HEIGHT 520
+
+/*
+ * Goal image size.
+ */
+#define GOALF_WIDTH 260
+#define GOALF_HEIGHT 297
+#define GOALM_WIDTH 296
+#define GOALM_HEIGHT 447
 
 /*
  * External variables.
@@ -1099,7 +1119,8 @@ extern int action_restrict;
 extern int restart_loop;
 extern int *orig_log[MAX_PLAYER];
 extern int *orig_history[MAX_PLAYER];
-
+extern int actions_chosen;
+extern int message_last_y;
 
 /*
  * External functions.
@@ -1188,8 +1209,6 @@ extern void redraw_goal(void);
 extern int action_check_start(void);
 extern void apply_options(void);
 extern void debug_card_moved(int c, int old_owner, int old_where);
-extern void gui_make_choice(game *g, int who, int type, int list[], int *nl,
-			    int special[], int *ns, int arg1, int arg2, int arg3);
 extern int cmp_hand(const void *h1, const void *h2);
 extern int cmp_consume(const void *l1, const void *l2);
 extern void gui_choose_action(game *g, int who, int action[2], int one);
@@ -1248,3 +1267,9 @@ extern void modify_gui(void);
 extern void restore_table_area(int i);
 extern void restore_status_area(int i);
 extern void clear_log(void);
+
+extern void gui_notify_rotation(game *g, int who);
+extern void gui_make_choice(game *g, int who, int type, int list[], int *nl,
+			    int special[], int *ns, int arg1, int arg2, int arg3);
+
+#endif

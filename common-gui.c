@@ -1,6 +1,14 @@
 #include "rftg.h"
 
 /*
+ * Our default options.
+ */
+options opt =
+{
+	.num_players = 3,
+};
+
+/*
  * Use simple random number generator.
  */
 int game_rand(game *g)

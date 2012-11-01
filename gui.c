@@ -31,14 +31,6 @@
 #endif
 
 /*
- * Our default options.
- */
-options opt = 
-{
-	.num_players = 3,
-};
-
-/*
  * Keyfile with our preferences.
  */
 static GKeyFile *pref_file;
@@ -169,12 +161,6 @@ char *ai_debug_action[2][23] =
 };
 
 /*
- * Card image size.
- */
-#define CARD_WIDTH 372
-#define CARD_HEIGHT 520
-
-/*
  * Goal image size.
  */
 #define GOALF_WIDTH 260
@@ -281,8 +267,7 @@ GtkTextMark *message_end;
 /*
  * y-coordinate of line of "last seen" text in buffer.
  */
-static int message_last_y;
-
+int message_last_y;
 
 /*
  * Add text to the message buffer.
@@ -2023,7 +2008,7 @@ static void goal_allocated(GtkWidget *widget, GtkAllocation *allocation,
 /*
  * Number of action buttons pressed.
  */
-static int actions_chosen;
+int actions_chosen;
 
 /*
  * Action which is receiving prestige boost.
@@ -3373,7 +3358,7 @@ int gui_choose_oort_kind(game *g, int who)
 /*
  * Player spots have been rotated.
  */
-static void gui_notify_rotation(game *g, int who)
+void gui_notify_rotation(game *g, int who)
 {
 	GtkWidget *temp_area, *temp_status;
 	int i;

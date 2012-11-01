@@ -7,7 +7,12 @@ LOCAL_SRC_FILES := \
 	engine.c \
 	init.c \
 	android.c \
-	common-gui.c
+	common-gui.c \
+	ai.c \
+	loadsave.c \
+	net.c
+
+LOCAL_CFLAGS := -DANDROID
 
 LOCAL_LDLIBS :=	-llog
 
